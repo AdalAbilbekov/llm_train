@@ -1,4 +1,4 @@
-from transformers import AutoModelForCausalLM
+from transformers import AutoModelForCausalLM, AutoTokenizer
 import yaml
 import pdb
 from omegaconf import OmegaConf
@@ -32,11 +32,14 @@ def load_model(model_config):
     elif model_config.enable_fsdp:
         pass
 
+    tokenizer = AutoTokenizer.from_pretrained(model_config.model.path)
+    tokenizer.pad_token_id = tokenizer.eos_token_id
+
     optimizer = load_optimizer(model, model_config)
 
-    return model, optimizer
+    return tokenizer, model, optimizer
 
     
 if __name__=="__main__":
     conf = OmegaConf.load("config.yaml")
-    model, optmizer = load_model(conf)
+    tokenizer, model, optmizer = load_model(conf)
