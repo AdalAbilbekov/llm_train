@@ -13,6 +13,12 @@ lr: 0.000002
 
 weight_decay: False
 
-dataset_path: "/data/nvme7n1p1/critical_all/critical_instruct/2024.09.06_instruct_kk_benchmarks-arc_119687.json"
+dataset_path: "datset.parquet"
 
-max_length: 2048
+max_length: 512
+
+save_step: 50
+
+save_path: "/home/adal/workspace/models/training_try1"
+
+dataset_type: parquet
