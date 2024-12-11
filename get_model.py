@@ -3,6 +3,16 @@ import yaml
 import pdb
 from omegaconf import OmegaConf
 import torch.optim as optim
+from torch.distributed.fsdp import (
+    FullyShardedDataParallel as FSDP,
+)
+
+# TODO: Add wraping policy for sharding model via auto_wrap_policy and FSDP
+def set_model(model, model_config, rank):
+    if model_config.enable_fsdp:
+        pass
+    else:
+        return model
 
 def load(model_config: None):
     use_cache = False if model_config.enable_fsdp else True
@@ -27,10 +37,8 @@ def load_optimizer(model, model_config):
 
 # TODO: add model parallel sharding.
 def load_model(model_config):
-    if not model_config.enable_fsdp:
-        model = load(model_config)
-    elif model_config.enable_fsdp:
-        pass
+    model = load(model_config)
+    model = set_model(model, model_config, 0)
 
     tokenizer = AutoTokenizer.from_pretrained(model_config.model.path)
     tokenizer.pad_token_id = tokenizer.eos_token_id
