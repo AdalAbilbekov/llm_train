@@ -1,24 +1,30 @@
 model:
-  path: "HuggingFaceTB/SmolLM2-135M-Instruct"
+  # path: "HuggingFaceTB/SmolLM2-135M-Instruct"
+  # path: "/data/nvme7n1p1/mistral_models/models--mistralai--Mixtral-8x7B-Instruct-v0.1/snapshots/Mixtral-8x7B-Instruct-v0.1"
+  path: "/data/nvme3n1p1/adal_workspace/models/Meta-Llama-3.1-8B-Instruct"
 
 fsdp: False
 
-batch_size: 64
+batch_size: 4
 
 quantization: False
 
-enable_fsdp: False
+enable_fsdp: True
 
-lr: 0.000002
+lr: 1e-4
 
 weight_decay: False
 
-dataset_path: "datset.parquet"
+dataset_path: "/data/nvme7n1p1/critical_all/critical_instruct/2024.09.06_instruct_kk_benchmarks-gsm8k_628249.json"
 
-max_length: 512
+max_length: 2048
 
-save_step: 50
+save_step: 1000
 
 save_path: "/home/adal/workspace/models/training_try1"
 
-dataset_type: parquet
+dataset_type: "json"
+
+mixed_precision: True
+
+use_peft: False
