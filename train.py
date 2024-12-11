@@ -13,21 +13,26 @@ def main(config_path):
 
     tokenizer, model, optimizer = load_model(conf)
 
+    dataset = build_custom_dataset(conf.dataset_path, tokenizer, conf.max_length, conf.dataset_type)
+
+    dl_train = DataLoader(dataset, shuffle=False, batch_size=2)
+    
     if conf.enable_fsdp:
         accelerator = Accelerator()
+        dl_train, model, optimizer = accelerator.prepare(
+            dl_train, 
+            model, 
+            optimizer)
     else:
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         model.to(device)
 
-    dataset = build_custom_dataset(conf.dataset_path, tokenizer, conf.max_length, conf.dataset_type)
-
-    dl_train = DataLoader(dataset, shuffle=False, batch_size=2)
-
     global_step = 0
     epochs = 3
     steps_per_epoch = len(dl_train)
+    model.train()
+    print("start training")
     for epoch in range(epochs):
-        model.train()
         pbar = tqdm.tqdm(colour="blue", desc=f"Training Epoch: {epoch+1}", total=steps_per_epoch, dynamic_ncols=True)
         for step, batch in enumerate(dl_train):
             if not conf.enable_fsdp:
