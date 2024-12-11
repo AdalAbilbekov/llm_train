@@ -17,7 +17,6 @@ from torch.distributed.fsdp.wrap import (
 )
 
 import functools
-from peft.tuners import PrefixEncoder, PromptEmbedding, PromptEncoder
 from torch.distributed.fsdp.wrap import _or_policy, lambda_auto_wrap_policy, transformer_auto_wrap_policy
 
 def get_wrapper():
@@ -32,3 +31,17 @@ def get_wrapper():
     )
 
     return auto_wrap_policy
+
+def get_policies(model_config, rank):
+
+    mixed_precision_policy = None
+    wrapping_policy = None
+
+    if model_config.mixed_precision:
+        mixed_precision_policy = fpSixteen
+        if rank == 0:
+            print(f"FP16 enabled")
+        else:
+            print(f"bFloat16 support not present. Using FP32, and not mixed precision")
+    wrapping_policy = get_wrapper()
+    return mixed_precision_policy, wrapping_policy
