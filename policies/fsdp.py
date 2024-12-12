@@ -17,6 +17,8 @@ from torch.distributed.fsdp.wrap import (
 )
 
 import functools
+from peft.tuners import PrefixEncoder, PromptEmbedding, PromptEncoder
+
 from torch.distributed.fsdp.wrap import _or_policy, lambda_auto_wrap_policy, transformer_auto_wrap_policy
 
 def get_wrapper():

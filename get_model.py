@@ -2,14 +2,39 @@ from transformers import AutoModelForCausalLM, AutoTokenizer
 import yaml
 import pdb
 from omegaconf import OmegaConf
+
+import torch
 import torch.optim as optim
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
 )
+from policies import get_policies
+
+from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload
+from torch.distributed.fsdp import ShardingStrategy
+import torch.distributed as dist
+import os
+
+def setup():
+    """Initialize the process group for distributed training"""
+    dist.init_process_group("nccl")
 
 # TODO: Add wraping policy for sharding model via auto_wrap_policy and FSDP
 def set_model(model, model_config, rank):
     if model_config.enable_fsdp:
+        mixed_precision_policy, wrapping_policy = get_policies(model_config, rank)
+        model = FSDP(
+            model,
+            auto_wrap_policy= wrapping_policy,
+            cpu_offload=CPUOffload(offload_params=True) if model_config.fsdp_cpu_offload else None,
+            mixed_precision=mixed_precision_policy,
+            sharding_strategy=ShardingStrategy.FULL_SHARD,
+            device_id=torch.cuda.current_device(),
+            limit_all_gathers=True,
+            sync_module_states=False,
+            param_init_fn=None,
+            )
+        pdb.set_trace()
         pass
     else:
         return model
@@ -38,7 +63,9 @@ def load_optimizer(model, model_config):
 # TODO: add model parallel sharding.
 def load_model(model_config):
     model = load(model_config)
-    model = set_model(model, model_config, 0)
+    setup()
+    rank = int(os.environ["RANK"])
+    model = set_model(model, model_config, rank)
 
     tokenizer = AutoTokenizer.from_pretrained(model_config.model.path)
     tokenizer.pad_token_id = tokenizer.eos_token_id
