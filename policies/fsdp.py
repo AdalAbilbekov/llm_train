@@ -5,7 +5,7 @@ import pdb
 import functools
 
 from pkg_resources import packaging
-from policies import fpSixteen
+from policies import fpSixteen, bfSixteen
 from  transformers.models.mixtral.modeling_mixtral import MixtralDecoderLayer
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
 from transformers.models.gpt_neox.modeling_gpt_neox import GPTNeoXLayer
@@ -36,14 +36,29 @@ def get_wrapper():
 
 def get_policies(model_config, rank):
 
+    bfloat_support = (
+        torch.version.cuda and
+        torch.cuda.is_bf16_supported() and
+        packaging.version.parse(torch.version.cuda).release >= (11, 0) and
+        dist.is_nccl_available() and
+        nccl.version() >= (2, 10)
+    )
+
     mixed_precision_policy = None
     wrapping_policy = None
 
+    # Identify training tensors dtype.
     if model_config.mixed_precision:
-        mixed_precision_policy = fpSixteen
-        if rank == 0:
-            print(f"FP16 enabled")
+        if model_config.brain_float and bfloat_support:
+            mixed_precision_policy = bfSixteen
+            if rank == 0:
+                print(f"BF16 enabled")
         else:
-            print(f"bFloat16 support not present. Using FP32, and not mixed precision")
+            mixed_precision_policy = fpSixteen
+            if rank == 0:
+                print(f"FP16 enabled")
+                
+    # Initialize transformer_auto_wrap_policy for layers to shard.
     wrapping_policy = get_wrapper()
+
     return mixed_precision_policy, wrapping_policy
