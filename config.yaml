@@ -1,9 +1,9 @@
 model:
   # path: "HuggingFaceTB/SmolLM2-135M-Instruct"
   # path: "/data/nvme7n1p1/mistral_models/models--mistralai--Mixtral-8x7B-Instruct-v0.1/snapshots/Mixtral-8x7B-Instruct-v0.1"
-  path: "/data/nvme3n1p1/adal_workspace/models/Meta-Llama-3.1-8B-Instruct"
+  path: "/raid/vladimir_albrekht/huggingface/models--meta-llama--Meta-Llama-3.1-8B-Instruct/snapshots/5206a32e0bd3067aef1ce90f5528ade7d866253f"
 
-fsdp: False
+fsdp: True
 
 batch_size: 4
 
@@ -27,4 +27,10 @@ dataset_type: "json"
 
 mixed_precision: True
 
-use_peft: False
+use_peft: True
+
+fsdp_cpu_offload: False
+
+low_cpu_fsdp: False
+
+brain_float: True
