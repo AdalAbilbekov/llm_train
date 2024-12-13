@@ -8,7 +8,7 @@ from pkg_resources import packaging
 from policies import fpSixteen, bfSixteen
 from  transformers.models.mixtral.modeling_mixtral import MixtralDecoderLayer
 from transformers.models.llama.modeling_llama import LlamaDecoderLayer
-from transformers.models.gpt_neox.modeling_gpt_neox import GPTNeoXLayer
+from transformers.models.qwen2.modeling_qwen2 import Qwen2DecoderLayer
 from  transformers.models.mistral.modeling_mistral import MistralDecoderLayer
 
 from torch.distributed.fsdp.wrap import (
@@ -26,7 +26,7 @@ def get_wrapper():
         transformer_auto_wrap_policy,
         transformer_layer_cls={
             LlamaDecoderLayer, # <- Deocder layer to apply FSDP sharding policy.
-            GPTNeoXLayer,
+            Qwen2DecoderLayer,
             MistralDecoderLayer,
             MixtralDecoderLayer
         },
@@ -35,6 +35,8 @@ def get_wrapper():
     return auto_wrap_policy
 
 def get_policies(model_config, rank):
+
+    to_use_bfloat=False
 
     bfloat_support = (
         torch.version.cuda and
@@ -51,6 +53,7 @@ def get_policies(model_config, rank):
     if model_config.mixed_precision:
         if model_config.brain_float and bfloat_support:
             mixed_precision_policy = bfSixteen
+            to_use_bfloat=True
             if rank == 0:
                 print(f"BF16 enabled")
         else:
@@ -61,4 +64,4 @@ def get_policies(model_config, rank):
     # Initialize transformer_auto_wrap_policy for layers to shard.
     wrapping_policy = get_wrapper()
 
-    return mixed_precision_policy, wrapping_policy
+    return mixed_precision_policy, wrapping_policy, to_use_bfloat
