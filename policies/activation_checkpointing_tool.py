@@ -12,10 +12,10 @@ from transformers.models.qwen2.modeling_qwen2 import Qwen2DecoderLayer
 from transformers.models.mistral.modeling_mistral import MistralDecoderLayer
 
 # Check the layer exists
-check_fn = lambda submodule: isinstance(submodule, [LlamaDecoderLayer,
+check_fn = lambda submodule: isinstance(submodule, (LlamaDecoderLayer,
                                                     MixtralAttention,
                                                     Qwen2DecoderLayer,
-                                                    MistralDecoderLayer])
+                                                    MistralDecoderLayer))
 
 
 # Usage of non-reentrant style for the best performance
