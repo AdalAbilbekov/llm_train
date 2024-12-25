@@ -1,11 +1,13 @@
 model:
   # path: "HuggingFaceTB/SmolLM2-135M-Instruct"
   # path: "/data/nvme7n1p1/mistral_models/models--mistralai--Mixtral-8x7B-Instruct-v0.1/snapshots/Mixtral-8x7B-Instruct-v0.1"
-  path: "/raid/vladimir_albrekht/huggingface/models--meta-llama--Meta-Llama-3.1-8B-Instruct/snapshots/5206a32e0bd3067aef1ce90f5528ade7d866253f"
+  # path: "/raid/vladimir_albrekht/huggingface/models--meta-llama--Meta-Llama-3.1-8B-Instruct/snapshots/5206a32e0bd3067aef1ce90f5528ade7d866253f"
+  path: "/raid/adal_abilbekov/workspace/own_fsdp/models/smollm2_135M"
+  save_path: "/raid/adal_abilbekov/workspace/own_fsdp/models"
 
 fsdp: True
 
-batch_size: 4
+batch_size: 24
 
 quantization: False
 
@@ -13,9 +15,9 @@ enable_fsdp: True
 
 lr: 1e-4
 
-weight_decay: False
+weight_decay: 0.005
 
-dataset_path: "/data/nvme7n1p1/critical_all/critical_instruct/2024.09.06_instruct_kk_benchmarks-gsm8k_628249.json"
+dataset_path: "/raid/adal_abilbekov/workspace/own_fsdp/datasets/2024.09.06_instruct_kk_benchmarks-gsm8k_628249.json"
 
 max_length: 2048
 
