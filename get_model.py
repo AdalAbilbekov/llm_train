@@ -7,6 +7,10 @@ import torch
 import torch.optim as optim
 from torch.distributed.fsdp import (
     FullyShardedDataParallel as FSDP,
+    ShardingStrategy,
+    FullStateDictConfig,
+    StateDictConfig,
+    StateDictType
 )
 from policies import (
     get_policies, 
@@ -16,7 +20,6 @@ from policies import (
     )
 
 from torch.distributed.fsdp.fully_sharded_data_parallel import CPUOffload
-from torch.distributed.fsdp import ShardingStrategy
 import torch.distributed as dist
 import os
 
@@ -35,6 +38,7 @@ def set_model(model, model_config, rank):
             mixed_precision=mixed_precision_policy if not model_config.brain_float else None,
             sharding_strategy=ShardingStrategy.FULL_SHARD,
             device_id=torch.cuda.current_device(),
+            forward_prefetch=True
         )
 
         apply_fsdp_checkpointing(model)
@@ -60,13 +64,29 @@ def load(model_config: None):
 
     return model
 
-# TODO: Prepare optimizer for the FSDP train.
+# Prepare optimizer for the FSDP train.
 def load_optimizer(model, model_config):
     return optim.AdamW(
         model.parameters(),
         lr=model_config.lr,
-        # weight_decay=model_config.weight_decay
+        weight_decay=model_config.weight_decay
     )
+
+# TODO: save optimizer, and save checkpoints in format of .safetensors.
+def save_model(model, optimizer, model_config, step, rank):
+    fullstate_save_policy = FullStateDictConfig(
+        offload_to_cpu=True, rank0_only=True
+        )
+
+    with FSDP.state_dict_type(
+        model, StateDictType.FULL_STATE_DICT, fullstate_save_policy
+    ):
+        cpu_state=model.state_dict()
+        print(f"saving process: rank {rank} with model state_dict\n")
+
+    if rank==0:
+        torch.save(cpu_state, f"{model_config.model.output_path}_{step}.pt")
+        print(f"model checkpoint saved at {model_config.model.output_path}_{step}\n")
 
 def load_model(model_config, rank):
     model = load(model_config)
@@ -75,11 +95,8 @@ def load_model(model_config, rank):
     tokenizer = AutoTokenizer.from_pretrained(model_config.model.path)
     tokenizer.pad_token_id = tokenizer.eos_token_id
 
-    # optimizer = load_optimizer(model, model_config)
-    print("let's go to the next era")
-    if rank==0:
-        pdb.set_trace()
-    sleep(3000)
+    optimizer = load_optimizer(model, model_config)
+    
     return tokenizer, model, optimizer
     
 if __name__=="__main__":
@@ -91,3 +108,4 @@ if __name__=="__main__":
         torch.cuda.set_device(local_rank)
         clear_gpu_cache(local_rank)
     tokenizer, model, optmizer = load_model(conf, rank)
+    save_model(model, optmizer, conf, 0, rank)
