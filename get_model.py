@@ -86,12 +86,12 @@ def save_model(model, optimizer, model_config, step, rank):
             print(f"saving process: rank {rank} with model state_dict\n")
 
         if rank==0:
-            torch.save(cpu_state, f"{model_config.model.output_path}_{step}.pt")
-            print(f"model checkpoint saved at {model_config.model.output_path}_{step}\n")
+            torch.save(cpu_state, f"{model_config.model.save_path}_{step}.pt")
+            print(f"model checkpoint saved at {model_config.model.save_path}_{step}\n")
     else:
-        model.save_pretrained(f"{model_config.model.output_path}_{step}.pt")
-        print(f"model checkpoint saved at {model_config.model.output_path}_{step}\n")
-        
+        model.save_pretrained(f"{model_config.model.save_path}_{step}.pt")
+        print(f"model checkpoint saved at {model_config.model.save_path}_{step}\n")
+
 def load_model(model_config, **kwargs):
     rank = kwargs.get("rank", None)
     device = kwargs.get("device", None)
