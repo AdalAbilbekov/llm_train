@@ -25,7 +25,7 @@ import os
 
 from time import sleep
 
-def set_model(model, model_config, rank):
+def set_model(model, model_config, rank, device=None):
     if model_config.enable_fsdp:
         mixed_precision_policy, wrapping_policy, to_use_bfloat = get_policies(model_config, rank)
 
@@ -48,7 +48,7 @@ def set_model(model, model_config, rank):
 
         return model
     else:
-        return model
+        return model.to(device)
 
 def load(model_config: None):
     use_cache = False if model_config.enable_fsdp else True
@@ -74,23 +74,30 @@ def load_optimizer(model, model_config):
 
 # TODO: save optimizer, and save checkpoints in format of .safetensors.
 def save_model(model, optimizer, model_config, step, rank):
-    fullstate_save_policy = FullStateDictConfig(
-        offload_to_cpu=True, rank0_only=True
-        )
+    if model_config.enable_fsdp:
+        fullstate_save_policy = FullStateDictConfig(
+            offload_to_cpu=True, rank0_only=True
+            )
 
-    with FSDP.state_dict_type(
-        model, StateDictType.FULL_STATE_DICT, fullstate_save_policy
-    ):
-        cpu_state=model.state_dict()
-        print(f"saving process: rank {rank} with model state_dict\n")
+        with FSDP.state_dict_type(
+            model, StateDictType.FULL_STATE_DICT, fullstate_save_policy
+        ):
+            cpu_state=model.state_dict()
+            print(f"saving process: rank {rank} with model state_dict\n")
 
-    if rank==0:
-        torch.save(cpu_state, f"{model_config.model.output_path}_{step}.pt")
+        if rank==0:
+            torch.save(cpu_state, f"{model_config.model.output_path}_{step}.pt")
+            print(f"model checkpoint saved at {model_config.model.output_path}_{step}\n")
+    else:
+        model.save_pretrained(f"{model_config.model.output_path}_{step}.pt")
         print(f"model checkpoint saved at {model_config.model.output_path}_{step}\n")
+        
+def load_model(model_config, **kwargs):
+    rank = kwargs.get("rank", None)
+    device = kwargs.get("device", None)
 
-def load_model(model_config, rank):
     model = load(model_config)
-    model = set_model(model, model_config, rank)
+    model = set_model(model, model_config, rank, device)
 
     tokenizer = AutoTokenizer.from_pretrained(model_config.model.path)
     tokenizer.pad_token_id = tokenizer.eos_token_id
@@ -101,11 +108,19 @@ def load_model(model_config, rank):
     
 if __name__=="__main__":
     conf = OmegaConf.load("config.yaml")
-    setup()
-    local_rank = int(os.environ["LOCAL_RANK"])
-    rank = int(os.environ["RANK"])
-    if torch.distributed.is_initialized(): #<- without this part all shards will be loaded to the single GPU.
-        torch.cuda.set_device(local_rank)
-        clear_gpu_cache(local_rank)
-    tokenizer, model, optmizer = load_model(conf, rank)
+    if not conf.enable_fsdp:
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    else:
+        setup()
+        local_rank = int(os.environ["LOCAL_RANK"])
+        rank = int(os.environ["RANK"])
+        if torch.distributed.is_initialized(): #<- without this part all shards will be loaded to the single GPU.
+            torch.cuda.set_device(local_rank)
+            clear_gpu_cache(local_rank)
+    arguments = {
+        "rank": rank if conf.enable_fsdp else None,
+        "device": device if not conf.enable_fsdp else None
+        }
+    tokenizer, model, optmizer = load_model(conf, **arguments)
+    pdb.set_trace()
     save_model(model, optmizer, conf, 0, rank)
