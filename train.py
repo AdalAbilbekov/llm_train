@@ -40,9 +40,17 @@ def main(config_path):
 
     dl_train = DataLoader(dataset, shuffle=False, batch_size=conf.batch_size)
 
+    steps_per_epoch = len(dl_train)
+    
+    # TODO: Add Linear warmup steps 5% of total steps.
+    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+        optimizer, 
+        T_max=steps_per_epoch, 
+        eta_min=conf.min_lr, 
+        last_epoch=-1)
+
     global_step = 0
     epochs = 3
-    steps_per_epoch = len(dl_train)
     model.train()
     print("start training")
     for epoch in range(epochs):
@@ -50,21 +58,23 @@ def main(config_path):
         for step, batch in enumerate(dl_train):
             if not conf.enable_fsdp:
                 batch = {k: v.to(device) for k, v in batch.items()}
+
+            optimizer.zero_grad()
             
             loss = model(**batch).loss
-
-           
             loss.backward()
+
+            scheduler.step()
             optimizer.step()
-            optimizer.zero_grad()
+    
             pbar.update()
 
             pbar.set_description(f"Training Epoch: {epoch}, step {step}/{steps_per_epoch} completed (loss: {loss.detach().float()})")
 
             global_step +=1
 
-            # if global_step % conf.save_step == 0:
-            #     save_model(model, optimizer, conf, global_step, rank)
+            if global_step % conf.save_step == 0:
+                save_model(model, optimizer, conf, global_step, rank)
         save_model(model, optimizer, conf, global_step, rank)
         pbar.close()
     
