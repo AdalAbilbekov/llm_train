@@ -13,6 +13,12 @@ quantization: False
 
 enable_fsdp: True
 
+adam_beta1: 0.9
+
+adam_beta2: 0.95
+
+adam_eps: 1.0e-08
+
 lr: 1e-4
 
 weight_decay: 0.005

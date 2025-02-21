@@ -68,6 +68,8 @@ def load(model_config: None):
 def load_optimizer(model, model_config):
     return optim.AdamW(
         model.parameters(),
+        betas=(model_config.adam_beta1, model_config.adam_beta2),
+        eps=model_config.adam_eps,
         lr=model_config.lr,
         weight_decay=model_config.weight_decay
     )
