@@ -65,6 +65,9 @@ def build_custom_dataset(dataset_path, tokenizer, max_length, dataset_type):
     dataset_train = DatasetTokenization(dataset['output'], dataset['input'], dataset['instruction'], tokenizer, max_length)
 
     return dataset_train
+# TODO: Prepare packed custom dataset for the base training.
+def build_custom_dataset_packed(dataset_path, tokenizer, max_length, dataset_type):
+    pass
 
 if __name__=="__main__":
     tokenizer_path = "HuggingFaceTB/SmolLM2-135M-Instruct"

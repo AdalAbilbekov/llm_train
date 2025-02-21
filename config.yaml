@@ -9,6 +9,13 @@ log:
   enable_wandb: True
   project_name: "my_train"
 
+data:
+  dataset_type: "json"
+  batch_size: 24
+  dataset_path: "/raid/adal_abilbekov/workspace/own_fsdp/datasets/2024.09.06_instruct_kk_benchmarks-gsm8k_628249.json"
+  max_length: 2048
+  packing: False
+
 fsdp: True
 
 batch_size: 24
@@ -29,15 +36,9 @@ min_lr: 1.0e-06
 
 weight_decay: 0.01
 
-dataset_path: "/raid/adal_abilbekov/workspace/own_fsdp/datasets/2024.09.06_instruct_kk_benchmarks-gsm8k_628249.json"
-
-max_length: 2048
-
 save_step: 1000
 
 save_path: "/home/adal/workspace/models/training_try1"
-
-dataset_type: "json"
 
 mixed_precision: True
 

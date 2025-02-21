@@ -44,9 +44,9 @@ def main(config_path):
     
     tokenizer, model, optimizer = load_model(conf, **arguments)
 
-    dataset = build_custom_dataset(conf.dataset_path, tokenizer, conf.max_length, conf.dataset_type)
+    dataset = build_custom_dataset(conf.data.dataset_path, tokenizer, conf.data.max_length, conf.data.dataset_type)
 
-    dl_train = DataLoader(dataset, shuffle=False, batch_size=conf.batch_size)
+    dl_train = DataLoader(dataset, shuffle=False, batch_size=conf.data.batch_size)
 
     steps_per_epoch = len(dl_train)
     
