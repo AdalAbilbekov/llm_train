@@ -14,6 +14,7 @@ from policies import (
 import os
 from time import sleep
 from datetime import datetime
+from data import padded_collate_sft
 
 def main(config_path):
     conf = OmegaConf.load(config_path)
@@ -44,9 +45,19 @@ def main(config_path):
     
     tokenizer, model, optimizer = load_model(conf, **arguments)
 
-    dataset = build_custom_dataset(conf.data.dataset_path, tokenizer, conf.data.max_length, conf.data.dataset_type)
+    dataset = build_custom_dataset(
+        conf.data.dataset_path, 
+        tokenizer, 
+        conf.data.max_length, 
+        conf.data.dataset_type, 
+        apply_packing=conf.data.packing)
 
-    dl_train = DataLoader(dataset, shuffle=False, batch_size=conf.data.batch_size)
+    dl_train = DataLoader(
+        dataset, 
+        shuffle=False, 
+        batch_size=conf.data.batch_size,
+        padded_func=if conf.data.packing: padded_collate_sft
+        )
 
     steps_per_epoch = len(dl_train)
     

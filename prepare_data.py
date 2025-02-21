@@ -5,6 +5,7 @@ import torch
 from torch.utils.data import Dataset
 from transformers import AutoTokenizer
 import pdb
+from data import PackedDataset, padded_collate_sft
 
 class DatasetTokenization(Dataset):
     def __init__(self, labels, input_ids, instruction, tokenizer, max_length):
@@ -56,7 +57,7 @@ class DatasetTokenization(Dataset):
 def tokenize_function(examples, tokenizer, max_length):
     return tokenizer(examples["prompt"], padding="max_length", truncation=True, max_length=max_length)
 
-def build_custom_dataset(dataset_path, tokenizer, max_length, dataset_type):
+def build_custom_dataset(dataset_path, tokenizer, max_length, dataset_type, applying_packing=False):
     dataset = load_dataset(dataset_type, data_files=dataset_path)
     dataset = dataset['train']
 
@@ -64,10 +65,10 @@ def build_custom_dataset(dataset_path, tokenizer, max_length, dataset_type):
 
     dataset_train = DatasetTokenization(dataset['output'], dataset['input'], dataset['instruction'], tokenizer, max_length)
 
-    return dataset_train
-# TODO: Prepare packed custom dataset for the base training.
-def build_custom_dataset_packed(dataset_path, tokenizer, max_length, dataset_type):
-    pass
+    if applying_packing:
+        return PackedDataset(dataset_train)
+    else:
+        return dataset_train
 
 if __name__=="__main__":
     tokenizer_path = "HuggingFaceTB/SmolLM2-135M-Instruct"
