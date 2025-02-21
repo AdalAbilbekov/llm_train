@@ -13,6 +13,7 @@ from policies import (
     )
 import os
 from time import sleep
+from datetime import datetime
 
 def main(config_path):
     conf = OmegaConf.load(config_path)
@@ -33,6 +34,13 @@ def main(config_path):
         "rank": rank if conf.enable_fsdp else None,
         "device": device if not conf.enable_fsdp else None
         }
+
+    # TODO: add logging localy to txt file or so.
+    if rank == 0 and conf.log.enable_wandb:
+        wandb.init(
+            project=f"{conf.log.project_name}",
+            name=f"project_name_{datetime.today().strftime('%Y-%m-%d')}",
+        )
     
     tokenizer, model, optimizer = load_model(conf, **arguments)
 
@@ -68,6 +76,14 @@ def main(config_path):
             optimizer.step()
     
             pbar.update()
+
+            if rank==0 and conf.log.enable_wandb:
+                loss_log = loss.detach().float()
+                wandb.log({
+                    "train_loss": loss_log,
+                    "perplexit":torch.exp(loss_log),
+                    "lr": optimizer.param_groups[0]['lr']
+                            })
 
             pbar.set_description(f"Training Epoch: {epoch}, step {step}/{steps_per_epoch} completed (loss: {loss.detach().float()})")
 

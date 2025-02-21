@@ -5,6 +5,10 @@ model:
   path: "/raid/adal_abilbekov/workspace/own_fsdp/models/smollm2_135M"
   save_path: "/raid/adal_abilbekov/workspace/own_fsdp/models"
 
+log:
+  enable_wandb: True
+  project_name: "my_train"
+
 fsdp: True
 
 batch_size: 24
